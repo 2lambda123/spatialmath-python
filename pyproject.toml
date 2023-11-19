@@ -40,6 +40,8 @@ dependencies = [
     "matplotlib",
     "ansitable",
     "typing_extensions",
+    "pre-commit==3.2.2",
+    "mypy==1.2.0",
 ]
 
 [project.urls]
