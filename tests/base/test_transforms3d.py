@@ -430,6 +430,20 @@ class Test3D(unittest.TestCase):
         a = rpy2tr(ang, order=seq)
         nt.assert_array_almost_equal(rpy2tr(tr2rpy(a, order=seq), order=seq), a)
 
+    def test_trnorm(self):
+        R = rpy2r(0.2, 0.3, 0.4)
+        R = np.round(R, 3)  # approx SO(3)
+        R = trnorm(R)
+        self.assertTrue(isrot(R, check=True))
+
+        R = rpy2r(0.2, 0.3, 0.4)
+        R = np.round(R, 3)  # approx SO(3)
+        T = rt2tr(R, [3, 4, 5])
+
+        T = trnorm(T)
+        self.assertTrue(ishom(T, check=True))
+        nt.assert_almost_equal(T[:3, 3], [3, 4, 5])
+
     def test_tr2eul(self):
         eul = np.r_[0.1, 0.2, 0.3]
         R = eul2r(eul)
@@ -494,6 +508,25 @@ class Test3D(unittest.TestCase):
         [theta, v] = tr2angvec(roty(pi / 2), unit="deg")
         nt.assert_array_almost_equal(theta, 90)
         nt.assert_array_almost_equal(v, np.r_[0, 1, 0])
+
+        true_ang = 1.51
+        true_vec = np.array([0., 1., 0.])
+        eps = 1e-08
+
+        # show that tr2angvec works on true rotation matrix
+        ang, vec = tr2angvec(roty(true_ang), check=True)
+        nt.assert_almost_equal(ang, true_ang)
+        nt.assert_almost_equal(vec, true_vec)
+
+        # check a rotation matrix that should fail
+        badR = roty(true_ang) + eps
+        with self.assertRaises(ValueError):
+            tr2angvec(badR, check=True)
+
+        # run without check
+        ang, vec = tr2angvec(badR, check=False)
+        nt.assert_almost_equal(ang, true_ang)
+        nt.assert_almost_equal(vec, true_vec)
 
     def test_print(self):
         R = rotx(0.3) @ roty(0.4)
@@ -764,7 +797,6 @@ class Test3D(unittest.TestCase):
         nt.assert_array_almost_equal(
             x2tr(x, representation="exp"), transl(t) @ r2t(trexp(gamma))
         )
-
 
 # ---------------------------------------------------------------------------------------#
 if __name__ == "__main__":

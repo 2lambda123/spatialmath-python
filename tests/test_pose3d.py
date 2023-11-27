@@ -8,10 +8,7 @@ we will assume that the primitives rotx,trotx, etc. all work
 from math import pi
 from spatialmath import SE3, SO3, SE2
 import numpy as np
-# from spatialmath import super_pose as sp
 from spatialmath.base import *
-from spatialmath.base import argcheck
-import spatialmath as sm
 from spatialmath.baseposematrix import BasePoseMatrix
 from spatialmath.twist import BaseTwist
 
@@ -216,7 +213,32 @@ class TestSO3(unittest.TestCase):
         array_compare(R, roty(0.3))
         self.assertIsInstance(R, SO3)
 
+    def test_constructor_TwoVec(self):
+        # Randomly selected vectors
+        v1 = [1, 73, -42]
+        v2 = [0, 0.02, 57]
+        v3 = [-2, 3, 9]
 
+        # x and y given
+        R = SO3.TwoVectors(x=v1, y=v2)
+        self.assertIsInstance(R, SO3)
+        nt.assert_almost_equal(R.det(), 1, 5)
+        # x axis should equal normalized x vector
+        nt.assert_almost_equal(R.R[:, 0], v1 / np.linalg.norm(v1), 5)
+
+        # y and z given
+        R = SO3.TwoVectors(y=v2, z=v3)
+        self.assertIsInstance(R, SO3)
+        nt.assert_almost_equal(R.det(), 1, 5)
+        # y axis should equal normalized y vector
+        nt.assert_almost_equal(R.R[:, 1], v2 / np.linalg.norm(v2), 5)
+
+        # x and z given
+        R = SO3.TwoVectors(x=v3, z=v1)
+        self.assertIsInstance(R, SO3)
+        nt.assert_almost_equal(R.det(), 1, 5)
+        # x axis should equal normalized x vector
+        nt.assert_almost_equal(R.R[:, 0], v3 / np.linalg.norm(v3), 5)
 
     def test_shape(self):
         a = SO3()
@@ -675,6 +697,18 @@ class TestSO3(unittest.TestCase):
         # inv
         # .T
         pass
+
+    def test_functions_lie(self):
+        R = SO3.EulerVec([0.42, 0.73, -1.17])
+
+        # Check log and exponential map
+        nt.assert_equal(R, SO3.Exp(R.log()))
+        np.testing.assert_equal((R.inv() * R).log(), np.zeros([3, 3]))
+
+        # Check euler vector map
+        nt.assert_equal(R, SO3.EulerVec(R.eulervec()))
+        np.testing.assert_equal((R.inv() * R).eulervec(), np.zeros(3))
+
 
 # ============================== SE3 =====================================#
 
